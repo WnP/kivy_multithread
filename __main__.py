@@ -5,19 +5,36 @@ from threading import Thread
 from time import sleep
 
 
-class MyThread(Thread):
+def blocking_function(*args, **kwargs):
+    print 'long blocking process -lbp- started with:'
+    print 'args: ', args
+    print 'kwargs: ', kwargs
+    sleep(4)
+    print 'lbp continue'
+    sleep(2)
+    print 'lbp finish'
+    return 'a very interresting result'
+
+
+class MyThreadHandler(Thread):
 
     def __init__(
             self,
             group=None, target=None, name=None, verbose=None,  # args required by threading.Thread
+            func=None,
             *args, **kwargs):
 
-        super(MyThread, self).__init__(
+        super(MyThreadHandler, self).__init__(
             group=group, target=target, name=name, verbose=verbose)
 
         # do whatever you want with args list and kwargs dict
         self.args = args
         self.kwargs = kwargs
+
+        if func is not None:
+            self.func = func
+        else:
+            self.func = lambda: None
 
         # handle the thread process result
         self._result = None
@@ -27,13 +44,8 @@ class MyThread(Thread):
         self.start()
 
     def run(self):
-        print 'long blocking process -lbp- started!'
-        sleep(4)
-        print 'lbp continue'
-        sleep(2)
-        self._result = 'a very interresting result'
+        self._result = self.func()
         self._is_finished = True
-        print 'lbp finish'
 
     @property
     def is_finished(self):
@@ -52,7 +64,9 @@ class MyWidget(BoxLayout):
         self.curent_threads_cbs = {}
 
     def start_blocking(self, *args, **kwargs):
-        t = MyThread()
+        # initialize thread
+        t = MyThreadHandler(func=lambda: blocking_function(1, 2, kwarg1='A', kwarg2='B'))
+        # initialize callback
         cb = lambda dt: self.thread_callback(t)
 
         # thread id as dict key
